@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE nta PUBLIC '-//Uppaal Team//DTD Flat System 1.6//EN' 'http://www.it.uu.se/research/group/darts/uppaal/flat-1_6.dtd'>
+<nta>
+	<declaration>// Place global declarations here.
+chan micro_in;
+</declaration>
+	<template>
+		<name>Microcontroller</name>
+		<declaration>clock y,z;</declaration>
+		<location id="id0" x="-195" y="-93">
+			<name x="-263" y="-127">low_power</name>
+		</location>
+		<location id="id1" x="-68" y="-153">
+			<name x="-78" y="-187">waiting</name>
+			<label kind="invariant" x="-85" y="-144">z&lt;=1</label>
+		</location>
+		<location id="id2" x="85" y="-119">
+			<name x="75" y="-153">computing</name>
+			<label kind="invariant" x="75" y="-102">y&lt;=5</label>
+		</location>
+		<location id="id3" x="229" y="-51">
+			<name x="219" y="-85">error</name>
+		</location>
+		<init ref="id0"/>
+		<transition id="id4">
+			<source ref="id2"/>
+			<target ref="id0"/>
+			<label kind="guard" x="-126" y="-17">y&gt;=3 &amp;&amp; y&lt;=5</label>
+			<nail x="51" y="17"/>
+			<nail x="-144" y="17"/>
+		</transition>
+		<transition id="id5">
+			<source ref="id2"/>
+			<target ref="id3"/>
+			<label kind="guard" x="103" y="-119">y&gt;5</label>
+		</transition>
+		<transition id="id6">
+			<source ref="id1"/>
+			<target ref="id2"/>
+			<label kind="assignment" x="-34" y="-144">y:=0</label>
+		</transition>
+		<transition id="id7">
+			<source ref="id0"/>
+			<target ref="id1"/>
+			<label kind="synchronisation" x="-177" y="-140">micro_in?</label>
+			<label kind="assignment" x="-161" y="-119">z:=0</label>
+		</transition>
+	</template>
+	<template>
+		<name x="5" y="5">InputGenerator</name>
+		<declaration>// Place local declarations here.
+
+clock x;
+</declaration>
+		<location id="id8" x="-374" y="-127">
+			<name x="-384" y="-161">idle</name>
+			<label kind="invariant" x="-384" y="-110">x&lt;=10</label>
+		</location>
+		<location id="id9" x="-246" y="-127">
+			<name x="-256" y="-161">sending</name>
+			<label kind="invariant" x="-238" y="-119">x&lt;=1</label>
+		</location>
+		<init ref="id8"/>
+		<transition id="id10">
+			<source ref="id9"/>
+			<target ref="id8"/>
+			<label kind="guard" x="-339" y="-85">x&gt;=1</label>
+			<label kind="synchronisation" x="-339" y="-68">micro_in!</label>
+			<nail x="-272" y="-51"/>
+			<nail x="-357" y="-51"/>
+		</transition>
+		<transition id="id11">
+			<source ref="id8"/>
+			<target ref="id9"/>
+			<label kind="guard" x="-348" y="-153">x&gt;=8</label>
+			<label kind="assignment" x="-356" y="-127">x:=0</label>
+		</transition>
+	</template>
+	<system>// Place template instantiations here.
+
+// List one or more processes to be composed into a system.
+system InputGenerator, Microcontroller;</system>
+	<queries>
+		<option key="--diagnostic" value="1"/>
+		<query>
+			<formula>A[] not Microcontroller.error</formula>
+			<comment>**Deadline satisfaction**: Is the microcontroller always able to complete computations before the deadline?</comment>
+			<result outcome="success" type="quality" timestamp="2025-07-06 22:51:37 +0200">
+				<option key="--diagnostic" value="1"/>
+			</result>
+		</query>
+		<query>
+			<formula>Microcontroller.waiting --&gt; Microcontroller.low_power</formula>
+			<comment>**Liveness**: Does the microcontroller eventually return to low-power mode?</comment>
+			<result outcome="success" type="quality" timestamp="2025-07-06 22:51:39 +0200">
+				<option key="--diagnostic" value="1"/>
+			</result>
+		</query>
+		<query>
+			<formula>E&lt;&gt; Microcontroller.computing and Microcontroller.y &gt;= 5</formula>
+			<comment>**Bounded response**: Is there a maximum time between input and computation completion?</comment>
+			<result outcome="success" type="quality" timestamp="2025-07-06 22:51:42 +0200">
+				<option key="--diagnostic" value="1"/>
+			</result>
+		</query>
+		<query>
+			<formula>A[] Microcontroller.low_power imply InputGenerator.idle</formula>
+			<comment>**Power efficiency**: Can the system stay in low-power mode indefinitely without input?</comment>
+			<result outcome="failure" type="quality" timestamp="2025-07-06 22:51:45 +0200">
+				<option key="--diagnostic" value="1"/>
+			</result>
+		</query>
+		<query>
+			<formula>E&lt;&gt; Microcontroller.computing and Microcontroller.y == 5</formula>
+			<comment>**Worst-case response time**: // Is there any execution where response takes exactly 5 time units?</comment>
+			<result outcome="success" type="quality" timestamp="2025-07-06 22:51:49 +0200">
+				<option key="--diagnostic" value="1"/>
+			</result>
+		</query>
+		<query>
+			<formula>A[] (Microcontroller.computing imply (Microcontroller.computing || Microcontroller.y==3))</formula>
+			<comment>**Minimum computation time**: // Computation always takes at least 3 time units</comment>
+			<result outcome="success" type="quality" timestamp="2025-07-06 22:51:52 +0200">
+				<option key="--diagnostic" value="1"/>
+			</result>
+		</query>
+		<query>
+			<formula>(Microcontroller.low_power and InputGenerator.sending) --&gt; (Microcontroller.computing and Microcontroller.z &lt;= 1)</formula>
+			<comment>**Wakeup latency bound**: // Transition from low-power to computing within 1 time unit</comment>
+			<result outcome="success" type="quality" timestamp="2025-07-06 22:51:54 +0200">
+				<option key="--diagnostic" value="1"/>
+			</result>
+		</query>
+	</queries>
+</nta>
